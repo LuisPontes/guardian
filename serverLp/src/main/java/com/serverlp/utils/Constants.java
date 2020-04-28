@@ -38,8 +38,8 @@ public class Constants {
     /**
      * Email.
      */
-    public static final String EMAIL = "luispontes.it.freelancer@gmail.com";
-    public static final String PASS_EMAIL = "nrdogkxzvnnkklof";
+    public static final String EMAIL = "xxxxxx@gmail.com";
+    public static final String PASS_EMAIL = "xxxxxxxx";
     public static String SUBJECT_EMAIL = "Reports GUARDION ServerLp!";
      public static String buildMsg(String new_ip, StatusService ipCheck, StatusService hostMaskCheck, StatusService noIpServiceCheck, StatusService morlaProjectCheck,String warningMsg) {
         StringBuilder b = new StringBuilder();
