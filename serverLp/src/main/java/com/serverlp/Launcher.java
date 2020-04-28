@@ -1,6 +1,8 @@
 package com.serverlp;
 
+import com.serverlp.services.email.EmailService;
 import com.serverlp.services.guardion.GuardionService;
+import com.serverlp.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +25,7 @@ public class Launcher {
      * Services.
      */
     private GuardionService guardionService = null;
+    private EmailService serviceEmail = null;
 
     public static void main(String[] args) {
         Launcher launcher = new Launcher();
@@ -32,6 +35,7 @@ public class Launcher {
     }
 
     private void init() {
+        serviceEmail = new EmailService("smtp.gmail.com", "465", Constants.EMAIL, Constants.PASS_EMAIL);
         LOGGER.info("[CREATE] Guardion service ... ");
         guardionService = GuardionService.getInstance();
         guardionService.setLauncher(this);
@@ -47,6 +51,10 @@ public class Launcher {
 //            }
 //
 //        } while (guardionService.isIsAliveGuardion());
+    }
+
+    public EmailService getServiceEmail() {
+        return serviceEmail;
     }
 
 }

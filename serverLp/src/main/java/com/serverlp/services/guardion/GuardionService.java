@@ -54,12 +54,13 @@ public class GuardionService {
     private StatusService ipCheck;
     private StatusService hostMaskCheck;
     private StatusService noIpServiceCheck;
-      private StatusService morlaProjectCheck;
+    private StatusService morlaProjectCheck;
 
     /**
      * GuardionStatus.
      */
     private static boolean isAliveGuardion = false;
+    private boolean firstTimeRuning = true;
 
     public static boolean isIsAliveGuardion() {
         return isAliveGuardion;
@@ -97,12 +98,12 @@ public class GuardionService {
             current_ip = RunCommands.getIp();
             FileManagement.writeFile(Constants.FILE_NAME_LAST_IP, current_ip);
         }
-        
 
         if (null != current_ip) {
 
             GUARDION_TIMER = new Timer("GUARDION");
             GUARDION_TIMER.scheduleAtFixedRate(new TimerTask() {
+                
                 @Override
                 public void run() {
 
@@ -110,9 +111,17 @@ public class GuardionService {
                      * Validate ip.
                      */
                     String new_ip = RunCommands.getIp().trim();
-                    
+
                     if (!new_ip.equalsIgnoreCase(current_ip)) {
                         //enviar email com o novo ip.   
+                        String warningMsg = "Novo IP Publico.";
+                        launcher.getServiceEmail().sendMail(
+                                Constants.EMAIL,
+                                Constants.EMAIL,
+                                Constants.SUBJECT_EMAIL,
+                                Constants.buildMsg(new_ip,ipCheck,hostMaskCheck,noIpServiceCheck,morlaProjectCheck,warningMsg)
+                        );
+                        
                         LOGGER.info("ENVIAR EMAIL COM O NOVO IP  [{}]", new_ip);
                         current_ip = new_ip;
                         if (FileManagement.deleteFile(new File(Constants.FILE_NAME_LAST_IP))) {
@@ -122,27 +131,25 @@ public class GuardionService {
                         } else {
                             LOGGER.info("[ERROR] Delete file ... [{}]", Constants.FILE_NAME_LAST_IP);
                         }
-                        ipCheck = StatusService.NOT_OK; 
+                        ipCheck = StatusService.NOT_OK;
 
                     } else {
-                        ipCheck = StatusService.OK;                        
+                        ipCheck = StatusService.OK;
                     }
-                    LOGGER.info("["+ipCheck+"]Current IP ... [{}]", current_ip);
-                    
+                    LOGGER.info("[" + ipCheck + "]Current IP ... [{}]", current_ip);
 
                     /**
                      * VAlidate no-ip Process.
                      */
                     String noipExec = RunCommands.checkNoIp();
-                    if (null==noipExec) {
+                    if (null == noipExec || noipExec.isEmpty() ) {
                         RunCommands.execCmd(Constants.EXEC_NOIP_SERVICE);
                         noIpServiceCheck = StatusService.NOT_OK;
-                    }else{
+                    } else {
                         noIpServiceCheck = StatusService.OK;
                     }
-                    LOGGER.info("["+noIpServiceCheck+"] No-IP Service.");
+                    LOGGER.info("[" + noIpServiceCheck + "] No-IP Service.");
 
-                   
                     /**
                      * Validate host if the name have correct ip.
                      */
@@ -153,25 +160,46 @@ public class GuardionService {
                     if (!current_ip.equals(host_ip_parts[host_ip_parts.length - 1])) {
                         //not equal its ok
                         hostMaskCheck = StatusService.NOT_OK;
+                        //enviar email com o novo ip.   
+                        String warningMsg = "host tem um ip diferente  [{"+current_ip+"}]";
+                                
+                        launcher.getServiceEmail().sendMail(
+                                Constants.EMAIL,
+                                Constants.EMAIL,
+                                Constants.SUBJECT_EMAIL,
+                                Constants.buildMsg(new_ip,ipCheck,hostMaskCheck,noIpServiceCheck,morlaProjectCheck,warningMsg)
+                        );
                         LOGGER.info("ENVIAR EMAIL COM AVISO que o host tem um ip diferente  [{}]", current_ip);
                     } else {
-                        hostMaskCheck = StatusService.OK;                         
+                        hostMaskCheck = StatusService.OK;
                     }
-                    LOGGER.info("["+hostMaskCheck+"]Host Name [{}] - IP [{}] -> Correct ip [{}]",Constants.HOSTNAME_SERVER, host_ip_parts[host_ip_parts.length - 1], current_ip);
+                    LOGGER.info("[" + hostMaskCheck + "]Host Name [{}] - IP [{}] -> Correct ip [{}]", Constants.HOSTNAME_SERVER, host_ip_parts[host_ip_parts.length - 1], current_ip);
 
                     /**
                      * Validate backOficce morla project process.
                      */
 //                    String pId = RunCommands.getProcessIdByName(Constants.EXEC_MORLA_PROJECT,Constants.PROCESS_ID_COLUMN);
-                    String pName = RunCommands.getProcessIdByName(Constants.EXEC_MORLA_PROJECT,Constants.PROCESS_NAME_COLUMN);
+                    String pName = RunCommands.getProcessIdByName(Constants.EXEC_MORLA_PROJECT, Constants.PROCESS_NAME_COLUMN);
                     if (!Constants.EXEC_MORLA_PROJECT.equalsIgnoreCase(pName)) {
-                         RunCommands.execCmd(Constants.EXEC_MORLA_PROJECT);
-                         morlaProjectCheck=StatusService.NOT_OK;
-                    }else{
-                        morlaProjectCheck=StatusService.OK;
+                        RunCommands.execCmd(Constants.EXEC_MORLA_PROJECT);
+                        morlaProjectCheck = StatusService.NOT_OK;
+                    } else {
+                        morlaProjectCheck = StatusService.OK;
                     }
-                    LOGGER.info("["+morlaProjectCheck+"] Morla WEB Project.  ");
-                   
+                    LOGGER.info("[" + morlaProjectCheck + "] Morla WEB Project.  ");
+                    
+                    if(firstTimeRuning){
+                        firstTimeRuning = false;
+                         String warningMsg = "Guardion ServerLp Started!";
+                                
+                        launcher.getServiceEmail().sendMail(
+                                Constants.EMAIL,
+                                Constants.EMAIL,
+                                Constants.SUBJECT_EMAIL,
+                                Constants.buildMsg(new_ip,ipCheck,hostMaskCheck,noIpServiceCheck,morlaProjectCheck,warningMsg)
+                        );
+                    }
+
                 }
             },
                     Constants.DELAY_TIMER_CHECK_IP,
@@ -185,10 +213,10 @@ public class GuardionService {
         }
     }
 
-    public static void main(String[] args) {
-
-        String result = "serverlp.ddns.net has address 94.60.97.38";
-        String[] part = result.split(" ");
-        System.out.println("" + part[part.length - 1]);
-    }
+//    public static void main(String[] args) {
+//
+//        String result = "serverlp.ddns.net has address 94.60.97.38";
+//        String[] part = result.split(" ");
+//        System.out.println("" + part[part.length - 1]);
+//    }
 }
